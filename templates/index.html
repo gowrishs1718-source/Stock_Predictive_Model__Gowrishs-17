@@ -1,72 +1,254 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Trend Prediction</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Stock Price Prediction Dashboard</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
-        .container {
-            max-width: 1200px;
-            margin-top: 50px;
+        body {
+            background: #f5f7fa;
         }
-        .chart-container {
-            margin-top: 30px;
-        }
-        .table-responsive {
+
+        .header {
+            background: #0d6efd;
+            color: white;
+            padding: 25px;
             margin-top: 20px;
+            margin-bottom: 30px;
+            border-radius: 15px;
         }
-        .download-link {
-            margin-top: 20px;
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0px 5px 12px rgba(0,0,0,0.15);
+        }
+
+        img {
+            border-radius: 10px;
         }
     </style>
+
 </head>
+
 <body>
-    <div class="container">
-        <h1 class="text-center">Stock Trend Prediction</h1>
-        <form method="POST">
-            <div class="mb-3">
-                <label for="stock" class="form-label">Enter Stock Ticker:</label>
-                <input type="text" class="form-control" id="stock" name="stock" value="POWERGRID.NS">
-            </div>
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </form>
-        
-        {% if plot_path_ema_20_50 %}
-        <div class="chart-container">
-            <h3>Closing Price vs Time (20 & 50 Days EMA)</h3>
-            <img src="{{ url_for('static', filename='ema_20_50.png') }}" class="img-fluid" alt="EMA 20 & 50">
-        </div>
-        {% endif %}
-        
-        {% if plot_path_ema_100_200 %}
-        <div class="chart-container">
-            <h3>Closing Price vs Time (100 & 200 Days EMA)</h3>
-            <img src="{{ url_for('static', filename='ema_100_200.png') }}" class="img-fluid" alt="EMA 100 & 200">
-        </div>
-        {% endif %}
-        
-        {% if plot_path_prediction %}
-        <div class="chart-container">
-            <h3>Prediction vs Original Trend</h3>
-            <img src="{{ url_for('static', filename='stock_prediction.png') }}" class="img-fluid" alt="Prediction vs Original">
-        </div>
-        {% endif %}
-        
-        {% if data_desc %}
-        <div class="table-responsive">
-            <h3 class="mt-4">Descriptive Data from Jan 2000 to Nov 2024</h3>
-            {{ data_desc | safe }}
-        </div>
-        {% endif %}
-        
-        {% if dataset_link %}
-        <div class="download-link">
-            <a href="{{ url_for('download_file', filename=dataset_link.split('/')[-1]) }}" class="btn btn-success" download>Download Dataset (CSV)</a>
-        </div>
-        {% endif %}
+
+<div class="container">
+
+    <div class="header text-center">
+        <h1>📈 Stock Price Prediction Dashboard</h1>
+        <p>Deep Learning (LSTM) Based Stock Prediction</p>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    {% if error %}
+    <div class="alert alert-danger">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="card p-4 mb-4">
+
+        <form method="POST">
+
+            <div class="row">
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Select Popular Stock
+                    </label>
+
+                    <select class="form-select" id="popularStock">
+
+                        <option value="">-- Select Stock --</option>
+
+                        <option>AAPL</option>
+                        <option>MSFT</option>
+                        <option>GOOG</option>
+                        <option>AMZN</option>
+                        <option>TSLA</option>
+
+                        <option>POWERGRID.NS</option>
+                        <option>RELIANCE.NS</option>
+                        <option>TCS.NS</option>
+                        <option>INFY.NS</option>
+                        <option>SBIN.NS</option>
+                        <option>ITC.NS</option>
+                        <option>ICICIBANK.NS</option>
+                        <option>HDFCBANK.NS</option>
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Or Enter Stock Symbol
+                    </label>
+
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="stock"
+                        name="stock"
+                        value="{{ stock if stock else 'POWERGRID.NS' }}"
+                        placeholder="Example: AAPL or TCS.NS">
+
+                </div>
+
+            </div>
+
+            <div class="text-center mt-4">
+
+                <button type="submit" class="btn btn-primary btn-lg">
+                    Predict Stock
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+{% if latest_price %}
+
+<div class="row g-4">
+
+<div class="col-md-3">
+<div class="card p-3 text-center">
+<h6>Selected Stock</h6>
+<h3>{{ stock }}</h3>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card p-3 text-center">
+<h6>Current Price</h6>
+<h3>₹ {{ latest_price }}</h3>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card p-3 text-center">
+<h6>Predicted Price</h6>
+<h3>₹ {{ predicted_price }}</h3>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card p-3 text-center">
+<h6>Average Price</h6>
+<h3>₹ {{ average_price }}</h3>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="card p-3 text-center">
+<h6>Highest Price</h6>
+<h3>₹ {{ highest_price }}</h3>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="card p-3 text-center">
+<h6>Lowest Price</h6>
+<h3>₹ {{ lowest_price }}</h3>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="card p-3 text-center">
+<h6>Prediction Difference</h6>
+<h3>₹ {{ prediction_difference }}</h3>
+</div>
+</div>
+
+</div>
+
+{% endif %}
+
+{% if plot_path_ema_20_50 %}
+
+<div class="card mt-5 p-4">
+
+<h3>EMA 20 & EMA 50</h3>
+
+<img src="{{ url_for('static', filename='ema_20_50.png') }}" class="img-fluid">
+
+</div>
+
+{% endif %}
+
+{% if plot_path_ema_100_200 %}
+
+<div class="card mt-5 p-4">
+
+<h3>EMA 100 & EMA 200</h3>
+
+<img src="{{ url_for('static', filename='ema_100_200.png') }}" class="img-fluid">
+
+</div>
+
+{% endif %}
+
+{% if plot_path_prediction %}
+
+<div class="card mt-5 p-4">
+
+<h3>Prediction vs Actual</h3>
+
+<img src="{{ url_for('static', filename='stock_prediction.png') }}" class="img-fluid">
+
+</div>
+
+{% endif %}
+
+{% if data_desc %}
+
+<div class="card mt-5 p-4">
+
+<h3>Dataset Statistics</h3>
+
+<div class="table-responsive">
+
+{{ data_desc|safe }}
+
+</div>
+
+</div>
+
+{% endif %}
+
+{% if dataset_link %}
+
+<div class="text-center mt-5 mb-5">
+
+<a
+href="{{ url_for('download_file', filename=dataset_link.split('/')[-1]) }}"
+class="btn btn-success btn-lg">
+
+Download Dataset CSV
+
+</a>
+
+</div>
+
+{% endif %}
+
+</div>
+
+<script>
+
+document.getElementById("popularStock").addEventListener("change", function () {
+    document.getElementById("stock").value = this.value;
+});
+
+</script>
+
 </body>
 </html>
